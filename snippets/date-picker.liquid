@@ -1,0 +1,52 @@
+{% comment %}
+/**配送日時の指定**/
+{% endcomment %}
+
+<div style="width:200px; margin: 20px 0 20px auto;">
+  <span style="display:block; margin-bottom: 5px;">配送希望日</span>
+  <input type="radio" name="attributes[配送日指定の有無]" value="指定しない" id="datePicker__label--false" {% unless cart.attributes["配送指定の有無"] == "指定する" %} checked{% endunless %}>
+  <label for="datePicker__label--false">指定しない</label>
+  <input type="radio" name="attributes[配送日指定の有無]" value="指定する" id="datePicker__label--true" {% if cart.attributes["配送指定の有無"] == "指定する" %} checked{% endif %}>
+  <label for="datePicker__label--true">指定する</label>
+  <input id="datepicker" type="text" name="attributes[配送希望日]" value="{{ cart.attributes.date }}" placeholder="配送希望日を選択する" readonly disabled/>
+</div>
+
+<script>
+//土日祝日指定
+$.get("https://holidays-jp.github.io/api/v1/date.json", function(holidaysData) {
+ $("#datepicker").datepicker({
+   minDate: '+5D', //最短日の指定*3日後から指定可能
+   maxDate: '+1M', //最長日の指定*2ヶ月後まで指定可能
+    beforeShowDay: function(date) {
+      if (date.getDay() == 0) {
+        return [true, 'day-sunday', null];//trueで土曜日を選択可に変更
+      } else if (date.getDay() == 6) {
+        return [true, 'day-saturday', null];//trueで日曜日を選択可に変更
+      }
+
+      var holidays = Object.keys(holidaysData);
+      for (var i = 0; i < holidays.length; i++) {
+        var holiday = new Date(Date.parse(holidays[i]));
+        if (holiday.getYear() == date.getYear() &&
+            holiday.getMonth() == date.getMonth() &&
+            holiday.getDate() == date.getDate()) {
+            return [true, 'day-holiday', null];//trueで祝日を選択可に変更
+        }
+      }
+      return [true, 'day-weekday', null];
+    }
+  });
+});
+
+//配送指定がない場合に配送希望日を選択できないようにする
+$(function(){
+   $( 'input[name="attributes[配送日指定の有無]"]:radio' ).change( function() {
+      var radioval = $(this).val();
+      if(radioval == "指定する"){
+         $('#datepicker').removeAttr('disabled');
+      }else{
+         $('#datepicker').attr('disabled','disabled').val("");
+      }
+   }); 
+});
+</script>
